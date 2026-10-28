@@ -1,0 +1,10 @@
+# Local development only. Copy to .dev.vars and fill in a separate LOCAL OAuth app.
+# No real secrets belong in this tracked example. Never commit .dev.vars.
+# Register http://127.0.0.1:5173/api/auth/callback as the local OAuth callback.
+# Production secrets belong in Cloudflare Worker secrets.
+APP_ORIGIN=http://127.0.0.1:5173
+ADMIN_GITHUB_ID=180553969
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+SESSION_SECRET=
+

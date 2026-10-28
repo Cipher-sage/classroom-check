@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cat-500-level-test",
+  "main": "worker/index.ts",
+  "account_id": "9154d31e936300f3d797744d83cded8b",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "classroom-check",
+      "database_id": "0289e8a5-62bf-40eb-8145-83de3d1fbb69",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "ADMIN_GITHUB_ID": "180553969",
+    "APP_ORIGIN": "https://cat-500-level-test.cat500-assessments.workers.dev"
+  }
+}

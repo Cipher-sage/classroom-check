@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import { authConfig, sign, verify, sessionUser, cookie, cookieName, oauthState, randomToken, pkceChallenge, validMutationOrigin, SESSION_MS, OAUTH_MS } from '../app/auth-core.ts';
+
+const config = authConfig({ APP_ORIGIN: 'https://exam.example', ADMIN_GITHUB_ID: '12345', GITHUB_CLIENT_ID: 'client-for-test', GITHUB_CLIENT_SECRET: 'test-value', SESSION_SECRET: 'test-secret-with-more-than-thirty-two-characters' });
+const now = 1000000;
+const token = await sign({ kind: 'session', githubId: config.adminGithubId, iat: now, exp: now + SESSION_MS }, config.sessionSecret);
+const cookieHeader = `${cookieName(config, 'session')}=${token}`;
+assert.equal((await sessionUser(cookieHeader, config, now)).userId, 'github:12345');
+assert.equal(await sessionUser(cookieHeader, config, now + SESSION_MS), null, 'expired sessions must be rejected');
+assert.equal(await sessionUser(cookieHeader, { ...config, adminGithubId: '67890' }, now), null, 'a different configured GitHub user cannot use the session');
+assert.equal(await sessionUser(cookieHeader, { ...config, sessionSecret: 'a-different-test-secret-over-thirty-two-characters' }, now), null, 'secret rotation revokes old sessions');
+assert.equal(await sessionUser(`${cookieHeader}; ${cookieHeader}`, config, now), null, 'duplicate cookies are ambiguous');
+const [body, signature] = token.split('.');
+const changedBody = Buffer.from(JSON.stringify({ kind: 'session', githubId: '67890', iat: now, exp: now + SESSION_MS })).toString('base64url');
+assert.equal(await verify(`${changedBody}.${signature}`, config.sessionSecret, 'session', now), null, 'tampered payload');
+assert.equal(await verify(`${body}.${signature.slice(0, -2)}xx`, config.sessionSecret, 'session', now), null, 'tampered signature');
+assert.equal(await verify(token, config.sessionSecret, 'oauth', now), null, 'session cookie cannot become OAuth state');
+const longLived = await sign({ kind: 'session', githubId: config.adminGithubId, iat: now, exp: now + SESSION_MS + 1 }, config.sessionSecret);
+assert.equal(await verify(longLived, config.sessionSecret, 'session', now), null, 'server enforces maximum session duration');
+const state = randomToken(), verifier = randomToken();
+const flow = await sign({ kind: 'oauth', state, verifier, iat: now, exp: now + OAUTH_MS }, config.sessionSecret);
+const flowHeader = `${cookieName(config, 'oauth')}=${flow}`;
+assert.deepEqual(await oauthState(flowHeader, state, config, now), { verifier });
+assert.equal(await oauthState(flowHeader, randomToken(), config, now), null, 'state mismatch');
+assert.equal(await oauthState(null, state, config, now), null, 'callback requires browser-bound state cookie');
+assert.equal(await oauthState(flowHeader, state, config, now + OAUTH_MS), null, 'OAuth state expires');
+assert.equal(await pkceChallenge('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk'), 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM', 'RFC 7636 S256 test vector');
+const request = (headers = {}, url = 'https://exam.example/api/auth/logout') => new Request(url, { method: 'POST', headers });
+assert.equal(validMutationOrigin(request({ Origin: config.origin }), config), true);
+assert.equal(validMutationOrigin(request({ Origin: 'https://attacker.example' }), config), false);
+assert.equal(validMutationOrigin(request(), config), false, 'missing Origin must fail closed');
+assert.equal(validMutationOrigin(request({ Origin: config.origin, 'Sec-Fetch-Site': 'cross-site' }), config), false);
+assert.equal(validMutationOrigin(request({ Origin: config.origin }, 'https://other.example/api/auth/logout'), config), false);
+const sessionCookie = cookie(config, 'session', token, SESSION_MS / 1000);
+assert.match(sessionCookie, /^__Host-cat-admin=/);
+for (const attr of ['Path=/', 'HttpOnly', 'SameSite=Lax', 'Secure', 'Max-Age=3600']) assert.ok(sessionCookie.includes(attr));
+assert.match(cookie(config, 'session', '', 0), /Max-Age=0/);
+for (const bad of [{ SESSION_SECRET: 'short' }, { ADMIN_GITHUB_ID: '' }, { APP_ORIGIN: 'http://exam.example' }, { APP_ORIGIN: 'https://exam.example/path' }, { APP_ORIGIN: 'https://exam.example/' }]) {
+  assert.throws(() => authConfig({ APP_ORIGIN: config.origin, ADMIN_GITHUB_ID: config.adminGithubId, GITHUB_CLIENT_ID: config.clientId, GITHUB_CLIENT_SECRET: config.clientSecret, SESSION_SECRET: config.sessionSecret, ...bad }));
+}
+console.log('PASS: admin allowlist, signed-session integrity/expiry, browser-bound OAuth state, PKCE, CSRF, secure cookie attributes and fail-closed configuration.');
