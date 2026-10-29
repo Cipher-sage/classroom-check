@@ -35,7 +35,7 @@ export async function POST(req:Request){
 try{
  if(req.headers.get('origin') && req.headers.get('origin')!==new URL(req.url).origin)return reply({error:'Invalid origin'},403);
  const b:any=await req.json(); const db=getDb(); const action=b.action==='flag'?'exit':b.action;
- if(['list','create','toggle','results','delete','getroster','setroster'].includes(action)){
+ if(['list','create','toggle','results','delete','getroster','setroster','allowrejoin'].includes(action)){
  const user=await getAdminUser();if(!user)return reply({error:'Please sign in to manage your tests.'},401);if(!isAdmin(user))return reply({error:'Administrator access only.'},403);
  if(!validMutationOrigin(req,getAuthConfig()))return reply({error:'Invalid origin'},403);
  if(action==='list'){const all=await db.select().from(exams).where(eq(exams.owner,user.userId));const rc=await db.select({exam:roster.exam,n:sql<number>`count(*)`}).from(roster).groupBy(roster.exam);const counts=new Map(rc.map(r=>[r.exam,Number(r.n)]));return reply({exams:all.map(x=>({...x,roster:counts.get(x.id)||0}))})}
@@ -47,6 +47,16 @@ try{
  }
  const e=await db.select().from(exams).where(and(eq(exams.id,b.id),eq(exams.owner,user.userId))).get();if(!e)return reply({error:'Test not found'},404);
  if(action==='toggle'){await db.update(exams).set({open:b.open?1:0}).where(eq(exams.id,e.id));return reply({ok:true})}
+ if(action==='allowrejoin'){
+ if(typeof b.attempt!=='string')return reply({error:'Invalid request'},400);
+ const a=await db.select().from(attempts).where(and(eq(attempts.id,b.attempt),eq(attempts.exam,e.id))).get();
+ if(!a)return reply({error:'Attempt not found'},404);
+ if(a.submitted||Date.now()>=a.deadline)return reply({error:'This attempt has already ended, so it cannot be continued. Use a reserve test for this student.'},409);
+ const fl=JSON.parse(a.flags).filter((f:any)=>f.type!=='Admin allowed rejoin');fl.push({at:Date.now(),type:'Admin allowed rejoin'});
+ const u=await db.update(attempts).set({flags:JSON.stringify(fl)}).where(and(eq(attempts.id,a.id),isNull(attempts.submitted),eq(attempts.flags,a.flags))).returning();
+ if(!u.length)return reply({error:'The attempt changed while saving. Please try again.'},409);
+ return reply({ok:true});
+ }
  if(action==='getroster'){const rows=await db.select().from(roster).where(eq(roster.exam,e.id));return reply({text:rows.map(r=>r.matric+', '+r.name).sort().join('\n'),count:rows.length})}
  if(action==='setroster'){
  if(typeof b.text!=='string'||b.text.length>200000)return reply({error:'Class list is missing or too large.'},400);
@@ -93,6 +103,17 @@ try{
  const row=await db.select().from(roster).where(and(eq(roster.exam,e.id),eq(roster.key,rosterKey(b.matric)))).get();
  if(!row||!nameMatches(fullName,row.name))return reply({error:'Your registration number and name do not match the class list. Check what you typed, or ask your supervisor.'},403);
  matric=row.matric;fullName=row.name;
+ }
+ const dup=await db.select().from(attempts).where(and(eq(attempts.exam,e.id),eq(attempts.matric,matric))).get();
+ if(dup){
+ const fl=JSON.parse(dup.flags);
+ if(!dup.submitted&&Date.now()<dup.deadline&&fl.some((f:any)=>f.type==='Admin allowed rejoin'&&Date.now()-f.at<1800000)){
+ const newId=crypto.randomUUID();const rest=fl.filter((f:any)=>f.type!=='Admin allowed rejoin');rest.push({at:Date.now(),type:'Warning: Student rejoined after admin recovery'});
+ const moved=await db.update(attempts).set({id:newId,flags:JSON.stringify(rest)}).where(and(eq(attempts.id,dup.id),isNull(attempts.submitted),eq(attempts.flags,dup.flags))).returning();
+ if(moved.length)return reply({token:newId});
+ return reply({error:'Please try again in a few seconds.'},409);
+ }
+ return reply({error:'This registration number already has an attempt. If you were already writing, ask your supervisor to allow you to rejoin.'},409);
  }
  const qs=JSON.parse(e.questions); const paper=shuffle(qs).map(({correct,...q}:any)=>({...q,options:shuffle(q.options)}));const id=crypto.randomUUID();const start=Date.now();
  try{await db.insert(attempts).values({id,exam:e.id,name:fullName,matric,department:'',paper:JSON.stringify(paper),start,deadline:start+e.minutes*60000,total:qs.length})}catch{return reply({error:'This matriculation number already has an attempt. Resume on the original browser or contact your supervisor.'},409)}
