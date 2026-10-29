@@ -1,3 +1,5 @@
-import { sqliteTable, text, integer, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, uniqueIndex, primaryKey } from 'drizzle-orm/sqlite-core';
 export const exams = sqliteTable('exams', { id:text('id').primaryKey(), owner:text('owner').notNull(), title:text('title').notNull(), course:text('course').notNull(), minutes:integer('minutes').notNull(), code:text('code').notNull().unique(), questions:text('questions').notNull(), open:integer('open').notNull().default(0), created:integer('created').notNull() });
 export const attempts = sqliteTable('attempts', { id:text('id').primaryKey(), exam:text('exam').notNull(), name:text('name').notNull(), matric:text('matric').notNull(), department:text('department').notNull(), paper:text('paper').notNull(), answers:text('answers').notNull().default('{}'), flags:text('flags').notNull().default('[]'), start:integer('start').notNull(), deadline:integer('deadline').notNull(), submitted:integer('submitted'), score:integer('score'), total:integer('total').notNull() }, t=>[uniqueIndex('one_attempt').on(t.exam,t.matric)]);
+
+export const roster = sqliteTable('roster', { exam:text('exam').notNull(), key:text('key').notNull(), matric:text('matric').notNull(), name:text('name').notNull() }, t=>[primaryKey({columns:[t.exam,t.key]})]);
