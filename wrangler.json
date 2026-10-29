@@ -21,6 +21,7 @@
   },
   "vars": {
     "ADMIN_GITHUB_ID": "180553969",
-    "APP_ORIGIN": "https://cat-500-level-test.cat500-assessments.workers.dev"
+    "APP_ORIGIN": "https://cat-500-level-test.cat500-assessments.workers.dev",
+    "GITHUB_CLIENT_ID": "Ov23lizXIglxIal2CvRo"
   }
 }
