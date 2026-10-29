@@ -13,6 +13,8 @@ Admin page: https://cat-500-level-test.cat500-assessments.workers.dev/admin
 
 These actions save directly online. No terminal, deployment or AI is needed. Local-preview tests do not automatically transfer to the live database.
 
+**CAT 500 Level** is already saved with 50 questions, 60 minutes and one mark per question. Entry was left closed after migration. Select **Open entry** when you are ready to admit students.
+
 ## Update the app on this PC
 
 1. Open the independent project in your editor:
@@ -79,20 +81,30 @@ git commit -m "Describe the update you made"
 git push origin main
 ```
 
-GitHub Desktop's Commit and Push origin buttons work too. A push saves source; it does not prove the live site was updated.
+For an easier visual option, open this repository in GitHub Desktop, review the changed files, enter a summary, click **Commit to main**, then **Push origin**.
 
-## Optional: publish automatically on GitHub pushes
+## Automatic publishing from GitHub — enabled
 
-This is an optional account setup. **Do not assume it is enabled.**
+Cloudflare is connected to this private repository and automatically publishes pushes to `main`. This was verified with commit `040d914` on 29 October 2026; its Cloudflare build completed and deployed successfully.
 
-1. Cloudflare dashboard → **Workers & Pages** → **cat-500-level-test** → **Settings → Builds**.
-2. Connect GitHub and grant access to private repository `Cipher-sage/classroom-check`.
-3. Choose production branch `main` and the repository root.
-4. Build command: `npm run typecheck && npm run build`. Deploy command: `npm run deploy:only`. Choose Node 24 if a build-runtime setting is shown.
-5. Complete Cloudflare's build/deploy authorization prompts. Keep the existing D1 binding and Worker secrets; do not put API tokens in source.
-6. Trigger a build and verify its success and correct live address before relying on it.
+For each update:
 
-After this is verified, the process is **edit → commit → push → check Cloudflare build status**, with no AI.
+1. Edit your files and **save** them.
+2. Commit the changes and **push to `main`**, using the commands above or GitHub Desktop.
+3. Open Cloudflare → **Workers & Pages** → **cat-500-level-test** → **Deployments**. Find your latest commit and click its **Build** link to see progress and logs. **Settings → Builds** holds the connection settings.
+4. Wait until the build and deployment finish successfully. A successful GitHub push alone does not confirm publication. If the build fails, open its log, fix the reported error, then commit and push the fix.
+5. Refresh the student and admin links to check your change.
+
+You do not need to double-click the publisher as well. Use **Publish to Cloudflare.cmd** when you want to publish directly from this PC; save those changes to GitHub afterwards so your backup stays current.
+
+Configured settings, for reference:
+
+- Repository: `Cipher-sage/classroom-check`; production branch: `main`; repository root.
+- Build: `npm run typecheck && npm test && npm run build`.
+- Deploy: `npm run deploy:only` (safe here because the build has just completed).
+- Build environment: `NODE_VERSION=24`; preview builds disabled.
+
+Keep the existing D1 binding and Worker secrets. Do not put passwords, API tokens or student backups in GitHub. These steps require no AI or ChatGPT usage allowance.
 
 Reference: https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
 

@@ -13,6 +13,8 @@ A classroom test app you own and can publish from your PC without ChatGPT or Cod
 
 Sign in at `/admin` with your authorized GitHub account. Create a test or import a question JSON file, choose each correct answer, save, then open entry. Students use their matriculation number and access code. Each question is worth one mark; question and option shuffling preserves the correct answer IDs.
 
+The migrated **CAT 500 Level** test has 50 questions, a 60-minute duration and one mark per question. Entry was left closed after migration; select **Open entry** when you are ready for students to join.
+
 Creating tests, opening/closing entry, viewing results and exporting records update the live database directly. They require no code publication or AI. There is currently no Edit existing test button: create a replacement for changed questions or duration and use its new code.
 
 Only the administrator can view scores and answer keys. Students get a completion message without their scores. Leaving the test screen triggers automatic submission and locks the attempt. Offline devices and forced browser termination can delay delivery; continue classroom supervision.
@@ -20,6 +22,8 @@ Only the administrator can view scores and answer keys. Students get a completio
 ## Publish code
 
 Requires Node.js 22.13+ (Node 24 LTS recommended), npm, Git and your Cloudflare account.
+
+On this PC, save your code changes and double-click **Publish to Cloudflare.cmd** in the project folder. Wait for **Published**, then refresh the live site. You can also use PowerShell:
 
 ```powershell
 # Once after cloning:
@@ -32,7 +36,7 @@ The deploy command checks TypeScript, builds, and publishes to your Cloudflare W
 
 Ordinary deployment preserves your D1 tests/results. Database migrations and backup imports are separate operations. Preserve the account ID, database ID and `DB` binding in `wrangler.json`.
 
-**A GitHub push saves source; it does not automatically publish until Cloudflare Git integration is configured.** See the optional setup in the PC guide.
+**Automatic publishing from GitHub is enabled and verified.** Save changes, commit and push to `main`, then wait for a successful Cloudflare build before checking the live site. The first verified GitHub deployment was commit `040d914` on 29 October 2026. See the PC guide for step-by-step instructions; the double-click publisher remains a manual alternative.
 
 ## Project framework
 
@@ -43,7 +47,7 @@ Ordinary deployment preserves your D1 tests/results. Database migrations and bac
 | Server and grading | Cloudflare Worker; `app/api/test/route.ts` |
 | Persistent records | D1 (SQLite) through Drizzle; `db/` and `drizzle/` |
 | Admin identity | Your GitHub OAuth app; `app/auth.ts` and `app/api/auth/` |
-| Publishing | Wrangler, optionally Cloudflare Workers Builds from GitHub |
+| Publishing | Cloudflare Workers Builds on GitHub `main`, or Wrangler from your PC |
 
 This version does not depend on Sites hosting or ChatGPT sign-in. GitHub numeric ID `180553969` is the configured administrator, and ownership is `github:180553969`. See [ADMIN-AUTH.md](ADMIN-AUTH.md). Keep production secrets in Cloudflare Worker secrets, never GitHub. Sessions expire on the server after one hour; the dashboard also signs out after ten minutes of inactivity.
 
@@ -61,8 +65,6 @@ Checks:
 ```powershell
 npm run typecheck
 npm test
-node tests/backup-import.mjs
-node tests/backup-endpoint.mjs
 ```
 
 Use Node 24 LTS for the backup-import test, which uses Node's SQLite module.
