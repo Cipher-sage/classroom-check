@@ -8,8 +8,15 @@ export function rosterKey(input: string): string {
   return fixTail(String(input).toUpperCase().replace(/[^A-Z0-9]/g, ''));
 }
 
+// Common spellings and short forms that people write for the same name.
+const SAME_NAME: Record<string, string> = {
+  muhd: 'muhammad', muh: 'muhammad', mohd: 'muhammad', mhd: 'muhammad', md: 'muhammad',
+  muhammed: 'muhammad', mohammad: 'muhammad', mohammed: 'muhammad', mohamed: 'muhammad', muhamed: 'muhammad', mohamad: 'muhammad',
+};
+
 export function nameTokens(input: string): string[] {
-  return String(input).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’`]/g, '').split(/[^a-z]+/).filter((t) => t.length > 1);
+  const out = String(input).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’`]/g, '').split(/[^a-z]+/).filter((t) => t.length > 1).map((t) => SAME_NAME[t] || t);
+  return [...new Set(out)]; // a name written twice (e.g. "Muhammad ... Muh'd") only has to be typed once
 }
 
 function distance(a: string, b: string): number {

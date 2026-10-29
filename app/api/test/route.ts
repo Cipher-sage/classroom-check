@@ -2,7 +2,7 @@ import {isAdmin} from '../../admin-auth';
 import {getDb} from '../../../db';
 import {exams,attempts,roster} from '../../../db/schema';
 import {rosterKey,nameMatches,parseRoster} from '../../roster';
-import {eq,and,isNull,gt,exists,notExists,sql} from 'drizzle-orm';
+import {eq,and,isNull,gt,lte,exists,notExists,sql} from 'drizzle-orm';
 import {getAdminUser,getAuthConfig} from '../../auth';
 import {validMutationOrigin} from '../../auth-core';
 export const dynamic='force-dynamic';
@@ -73,10 +73,10 @@ try{
  await db.delete(roster).where(eq(roster.exam,e.id));
  return reply({ok:true});
  }
+ // Finalize expired attempts atomically, without a query loop that grows with class size.
+ await db.update(attempts).set({score:sql<number>`(SELECT count(*) FROM json_each(${e.questions}) AS question JOIN json_each(${attempts.answers}) AS answer ON answer.key = json_extract(question.value, '$.id') AND answer.value = json_extract(question.value, '$.correct'))`,submitted:attempts.deadline}).where(and(eq(attempts.exam,e.id),isNull(attempts.submitted),lte(attempts.deadline,Date.now())));
  const rows=await db.select().from(attempts).where(eq(attempts.exam,e.id));
- const stale=rows.filter(r=>!r.submitted&&Date.now()>=r.deadline),done=new Map<string,any>();
- for(let i=0;i<stale.length;i+=15)await Promise.all(stale.slice(i,i+15).map(async r=>{done.set(r.id,await finish(r,e))}));
- const results=rows.map(r=>{const a=done.get(r.id)||r;const {paper,answers,flags:_f,...safe}=a;const t=timing(a);return {...safe,flags:JSON.stringify(t.other),timing:t.timing}});return reply({results});
+ const results=rows.map(a=>{const {paper,answers,flags:_f,...safe}=a;const t=timing(a);return {...safe,flags:JSON.stringify(t.other),timing:t.timing}});return reply({results});
  }
  if(action==='checkCode'){
  if(typeof b.code!=='string'||b.code.length>20)return reply({error:'Enter your class code.'},400);
@@ -110,8 +110,8 @@ try{
  return reply({ok:true});
  }
  if(action==='exit'){
- const paper=JSON.parse(a.paper);const answers:any={};
- const supplied=b.answers&&typeof b.answers==='object'?b.answers:JSON.parse(a.answers);
+ const paper=JSON.parse(a.paper);const answers:any={...JSON.parse(a.answers)};
+ const supplied=b.answers&&typeof b.answers==='object'?b.answers:{};
  for(const q of paper){if(q.options.some((o:any)=>o.id===supplied[q.id]))answers[q.id]=supplied[q.id]}
  const e=(await db.select().from(exams).where(eq(exams.id,a.exam)).get())!;
  const score=JSON.parse(e.questions).reduce((sum:number,q:any)=>sum+(answers[q.id]===q.correct?1:0),0);
@@ -122,8 +122,8 @@ try{
  return reply({submitted:true});
  }
  if(action==='save'||action==='submit'){
- const paper=JSON.parse(a.paper);const answers:any={};for(const q of paper){const choice=b.answers?.[q.id];if(q.options.some((o:any)=>o.id===choice))answers[q.id]=choice}
- const prev=JSON.parse(a.answers),flags=JSON.parse(a.flags),at=Date.now();for(const q of paper){if(answers[q.id]&&answers[q.id]!==prev[q.id]&&flags.length<600)flags.push({at,type:'answer',q:q.id})}
+ const prev=JSON.parse(a.answers);const paper=JSON.parse(a.paper);const answers:any={...prev};for(const q of paper){const choice=b.answers?.[q.id];if(q.options.some((o:any)=>o.id===choice))answers[q.id]=choice}
+ const flags=JSON.parse(a.flags),at=Date.now();for(const q of paper){if(answers[q.id]&&answers[q.id]!==prev[q.id]&&flags.length<600)flags.push({at,type:'answer',q:q.id})}
  await db.update(attempts).set({answers:JSON.stringify(answers),flags:JSON.stringify(flags)}).where(and(eq(attempts.id,a.id),isNull(attempts.submitted),gt(attempts.deadline,Date.now())));a=(await db.select().from(attempts).where(eq(attempts.id,a.id)).get())!;
  if(action==='submit'){await finish(a);return reply({submitted:true})}
  }

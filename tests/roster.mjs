@@ -25,6 +25,16 @@ assert.ok(!nameMatches('Musa Ahmed Ibrahim', 'MUSA Yakub Ibrahim'));     // clas
 assert.ok(nameMatches('Musa Ahmed Ibrahim Extra', 'MUSA Ahmed Ibrahim'));  // one extra name allowed
 assert.ok(!nameMatches('Musa Ahmed Ibrahim Extra Other', 'MUSA Ahmed Ibrahim'));
 
+// short forms of Muhammad
+assert.ok(nameMatches('Sulaiman Muhammad Muhammad', "MUHAMMAD Sulaiman Muh'd"));
+assert.ok(nameMatches('Muhammad Sulaiman', "MUHAMMAD Sulaiman Muh'd"));            // written once is enough
+assert.ok(nameMatches('Muhd Sulaiman Muhammad', "MUHAMMAD Sulaiman Muh'd"));
+assert.ok(nameMatches('Baba Babangida Muhammad', "BABANGIDA BABA Muh'd"));
+assert.ok(nameMatches('Mohammed Abubakar', "MUHAMMAD Muh'd Abubakar"));
+assert.ok(nameMatches("Abdurraman Muhammad Amir", "ABDURRAMAN Muh'd Amir"));
+assert.ok(!nameMatches('Muhammad Sulaiman', "ABDURRAMAN Muh'd Amir"));
+assert.ok(!nameMatches('Muhammad', "MUHAMMAD Sulaiman Muh'd"));                    // still needs the other names
+
 // parsing
 const p = parseRoster('matric,name\nUG00/ABCD/1002, Ada Obi\r\nUG00/ABCD/l008\tZed Quinn\n\nUG01/ABCD/1001 Bola Ade Ken\nnonsense');
 assert.equal(p.rows.length, 3);

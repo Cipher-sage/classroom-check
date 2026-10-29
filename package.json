@@ -15,7 +15,7 @@
     "db:local": "wrangler d1 migrations apply DB --local --config wrangler.json",
     "db:remote": "wrangler d1 migrations apply DB --remote --config wrangler.json",
     "db:generate": "drizzle-kit generate",
-    "test": "node --experimental-strip-types tests/roster.mjs && node --experimental-strip-types tests/auth-security.mjs && node tests/backup-import.mjs && node tests/backup-endpoint.mjs"
+    "test": "node --experimental-strip-types tests/roster.mjs && node --experimental-strip-types tests/auth-security.mjs && node tests/backup-import.mjs && node tests/backup-endpoint.mjs && node tests/results-finalization.mjs && node tests/answer-preservation.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
