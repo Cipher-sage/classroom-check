@@ -45,7 +45,7 @@ const requireMock = name => {
   if (name === '../../auth') return { getAdminUser: async () => user, getAuthConfig: () => ({}) };
   if (name === '../../admin-auth') return { isAdmin: () => allowed };
   if (name === '../../auth-core') return { validMutationOrigin: () => true };
-  if (name === '../../roster') return {};
+  if (name === '../../roster') return { rosterKey: x => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '') };
   throw Error(`Unexpected import ${name}`);
 };
 vm.runInNewContext(compile('../app/api/test/route.ts'), {
@@ -92,7 +92,7 @@ async function results(id = 'owned') {
 
 let result = await results();
 assert.equal(result.response.status, 200, errors.map(args => args.map(value => value?.cause?.message || value?.message || String(value)).join(': ')).join('\n'));
-assert.equal(queries.length, 3, 'ownership read, one atomic finalization, one results read regardless of 102 expired rows');
+assert.equal(queries.length, 4, 'ownership read, one atomic finalization, one results read, one class-list read regardless of 102 expired rows');
 assert.equal(queries.filter(q => /^update /i.test(q)).length, 1);
 assert.equal(result.body.results.length, 104, 'only owned exam attempts appear');
 for (const row of result.body.results) {
@@ -110,7 +110,7 @@ for (const [i, row] of after.entries()) {
 }
 result = await results();
 assert.equal(result.response.status, 200);
-assert.equal(queries.length, 3);
+assert.equal(queries.length, 4);
 assert.deepEqual(allRows(), after, 'repeated result loading is idempotent');
 
 result = await results('unrelated');
@@ -126,5 +126,41 @@ assert.equal(result.response.status, 403);
 assert.equal(queries.length, 0);
 assert.deepEqual(allRows(), after);
 assert.deepEqual(errors, []);
+
+// --- review page: per-student answer sheet, labels, question analysis ---
+allowed = true;
+result = await results();
+const rowOf = id => result.body.results.find(r => r.id === id);
+assert.equal(rowOf('expired-7').ended, 'Time ran out');
+assert.equal(rowOf('active').ended, 'In progress');
+assert.equal(rowOf('submitted').ended, 'Submitted by student');
+assert.equal(rowOf('expired-7').marks.length, 50);
+assert.equal([...rowOf('expired-7').marks].filter(c => c === 'C').length, expected.get('expired-7'), 'marks string agrees with the stored score');
+assert.equal(rowOf('expired-0').marks, '-'.repeat(50), 'a student with no answers has all blanks');
+assert.equal(result.body.qstats.length, 50);
+assert.ok(result.body.qstats.every(q => q.answered <= 104 && q.correct <= q.answered));
+assert.deepEqual(result.body.absent, [], 'no class list means no absent list');
+assert.ok(!JSON.stringify(result.body.results).includes('"correct":"option'), 'answer key is not copied into result rows');
+const detailRequest = (id, attempt) => new Request('https://exam.example/api/test', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://exam.example' }, body: JSON.stringify({ action: 'attemptdetail', id, attempt }) });
+let detail = await route.POST(detailRequest('owned', 'expired-7')); const detailBody = (await detail.json()).detail;
+assert.equal(detail.status, 200);
+assert.equal(detailBody.sheet.length, 50);
+assert.equal(detailBody.sheet.filter(x => x.status === 'correct').length, expected.get('expired-7'));
+assert.equal(detailBody.sheet.filter(x => x.status === 'blank').length, 0);
+assert.equal(detailBody.sheet[0].text, 'Question 0', 'sheet is in the original exam order');
+assert.equal(detailBody.sheet[0].shownAs, 50, 'and records the position the student actually saw');
+assert.deepEqual(detailBody.sheet[0].options.map(o => o.id), [...questions[0].options].reverse().map(o => o.id), 'options appear in the order this student saw them');
+assert.equal(detailBody.ended, 'Time ran out');
+detail = await route.POST(detailRequest('owned', 'expired-0')); const blankBody = (await detail.json()).detail;
+assert.equal(blankBody.sheet.filter(x => x.status === 'blank').length, 50);
+detail = await route.POST(detailRequest('owned', 'other-exam'));
+assert.equal(detail.status, 404, 'an attempt from a different exam cannot be opened through this one');
+detail = await route.POST(detailRequest('unrelated', 'other-exam'));
+assert.equal(detail.status, 404, 'another owner cannot open an answer sheet');
+user = null; detail = await route.POST(detailRequest('owned', 'expired-7'));
+assert.equal(detail.status, 401);
+user = { userId: 'github:owner' };
+assert.deepEqual(allRows(), after, 'viewing answer sheets changes nothing');
+assert.deepEqual(errors, []);
 sqlite.close();
-console.log('PASS: 102 expired attempts graded atomically in 3 queries; 50-question stable-ID scoring, deadline boundary, idempotence, owner isolation, and active/submitted rows preserved.');
+console.log('PASS: 102 expired attempts graded atomically in 4 queries; 50-question stable-ID scoring, deadline boundary, idempotence, owner isolation, and active/submitted rows preserved.');

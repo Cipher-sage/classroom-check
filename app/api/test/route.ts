@@ -18,6 +18,12 @@ function timing(a:any){
  const fast=answered>=5&&avg!==null&&(avg<6||quick/answered>0.5);
  return {other,timing:{answered,avg:avg===null?null:Math.round(avg*10)/10,quick,changes:ans.length-first.size,fast}};
 }
+function endedLabel(a:any,other:any[]){
+ if(!a.submitted)return 'In progress';
+ const f=other.find((x:any)=>String(x.type).startsWith('Auto-submitted'));
+ if(f){const t=String(f.type).toLowerCase();return t.includes('full screen')?'Auto-submitted: exited full screen':t.includes('focus')?'Auto-submitted: lost focus twice':t.includes('left')?'Auto-submitted: left the test screen':'Auto-submitted'}
+ return a.submitted>=a.deadline?'Time ran out':'Submitted by student';
+}
 async function finish(initial:any,exam?:any){
  const db=getDb();
  for(let tries=0;tries<5;tries++){
@@ -35,7 +41,7 @@ export async function POST(req:Request){
 try{
  if(req.headers.get('origin') && req.headers.get('origin')!==new URL(req.url).origin)return reply({error:'Invalid origin'},403);
  const b:any=await req.json(); const db=getDb(); const action=b.action==='flag'?'exit':b.action;
- if(['list','create','toggle','results','delete','getroster','setroster','allowrejoin'].includes(action)){
+ if(['list','create','toggle','results','delete','getroster','setroster','allowrejoin','attemptdetail'].includes(action)){
  const user=await getAdminUser();if(!user)return reply({error:'Please sign in to manage your tests.'},401);if(!isAdmin(user))return reply({error:'Administrator access only.'},403);
  if(!validMutationOrigin(req,getAuthConfig()))return reply({error:'Invalid origin'},403);
  if(action==='list'){const all=await db.select().from(exams).where(eq(exams.owner,user.userId));const rc=await db.select({exam:roster.exam,n:sql<number>`count(*)`}).from(roster).groupBy(roster.exam);const counts=new Map(rc.map(r=>[r.exam,Number(r.n)]));return reply({exams:all.map(x=>({...x,roster:counts.get(x.id)||0}))})}
@@ -83,10 +89,31 @@ try{
  await db.delete(roster).where(eq(roster.exam,e.id));
  return reply({ok:true});
  }
+ if(action==='attemptdetail'){
+ if(typeof b.attempt!=='string')return reply({error:'Invalid request'},400);
+ let a=await db.select().from(attempts).where(and(eq(attempts.id,b.attempt),eq(attempts.exam,e.id))).get();
+ if(!a)return reply({error:'Attempt not found'},404);
+ if(!a.submitted&&Date.now()>=a.deadline)a=await finish(a,e);
+ const qs:any[]=JSON.parse(e.questions),paper:any[]=JSON.parse(a.paper),ans=JSON.parse(a.answers);
+ const seen=new Map(paper.map((q:any,i:number)=>[q.id,{pos:i+1,options:q.options}]));
+ const sheet=qs.map((q:any,i:number)=>{const s=seen.get(q.id);const chosen=ans[q.id]||null;
+ return {n:i+1,shownAs:s?s.pos:null,text:q.text,chosen,correct:q.correct,status:!chosen?'blank':chosen===q.correct?'correct':'wrong',options:(s?s.options:q.options).map((o:any)=>({id:o.id,text:o.text}))}});
+ const t=timing(a);
+ return reply({detail:{matric:a.matric,name:a.name,score:a.score,total:a.total,submitted:a.submitted,deadline:a.deadline,ended:endedLabel(a,t.other),flags:t.other,sheet}});
+ }
  // Finalize expired attempts atomically, without a query loop that grows with class size.
  await db.update(attempts).set({score:sql<number>`(SELECT count(*) FROM json_each(${e.questions}) AS question JOIN json_each(${attempts.answers}) AS answer ON answer.key = json_extract(question.value, '$.id') AND answer.value = json_extract(question.value, '$.correct'))`,submitted:attempts.deadline}).where(and(eq(attempts.exam,e.id),isNull(attempts.submitted),lte(attempts.deadline,Date.now())));
  const rows=await db.select().from(attempts).where(eq(attempts.exam,e.id));
- const results=rows.map(a=>{const {paper,answers,flags:_f,...safe}=a;const t=timing(a);return {...safe,flags:JSON.stringify(t.other),timing:t.timing}});return reply({results});
+ const qs:any[]=JSON.parse(e.questions);
+ const stat=qs.map((q:any)=>({answered:0,correct:0,opts:Object.fromEntries(q.options.map((o:any)=>[o.id,0]))}));
+ const results=rows.map(a=>{const ans=JSON.parse(a.answers);
+ const marks=qs.map((q:any,i:number)=>{const c=ans[q.id];if(!c)return '-';stat[i].answered++;if(c in stat[i].opts)stat[i].opts[c]++;if(c===q.correct){stat[i].correct++;return 'C'}return 'W'}).join('');
+ const {paper,answers,flags:_f,...safe}=a;const t=timing(a);return {...safe,flags:JSON.stringify(t.other),timing:t.timing,marks,ended:endedLabel(a,t.other)}});
+ const qstats=qs.map((q:any,i:number)=>{const top=q.options.map((o:any)=>({text:o.text,count:stat[i].opts[o.id]||0,correct:o.id===q.correct})).sort((x:any,y:any)=>y.count-x.count)[0];
+ return {n:i+1,text:q.text,answered:stat[i].answered,correct:stat[i].correct,top:stat[i].answered&&top?top:null}});
+ const have=new Set(rows.map(r=>rosterKey(r.matric)));
+ const absent=(await db.select().from(roster).where(eq(roster.exam,e.id))).filter(x=>!have.has(x.key)).map(x=>({matric:x.matric,name:x.name})).sort((x,y)=>x.matric.localeCompare(y.matric));
+ return reply({results,qstats,absent});
  }
  if(action==='checkCode'){
  if(typeof b.code!=='string'||b.code.length>20)return reply({error:'Enter your class code.'},400);
