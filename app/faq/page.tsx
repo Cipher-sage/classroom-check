@@ -13,8 +13,8 @@ const QA: [string, string][] = [
 ];
 export default function Faq() {
   return <Shell active="faq">
-    <section style={{ padding: '48px 0 8px', maxWidth: 720 }}><p className="sx-eb" style={{ marginBottom: 14 }}>FAQ</p><h1 className="sx-h1" style={{ marginBottom: 16 }}>Questions lecturers ask us.</h1><p className="sx-lead">Straight answers, including what Classroom Check can’t do.</p></section>
-    <section style={{ marginTop: 36, maxWidth: 820 }}>{QA.map(([q, a]) => <div className="sx-card" key={q} style={{ marginBottom: 14 }}><h3 className="sx-h3" style={{ fontSize: 21, marginBottom: 8 }}>{q}</h3><p style={{ color: 'var(--mut)' }}>{a}</p></div>)}</section>
-    <section className="sx-sec" style={{ textAlign: 'center' }}><a className="sx-btn" href="/signup">Request access</a></section>
+    <section className="sx-pagehead"><p className="sx-eb">FAQ</p><h1 className="sx-h1">Questions lecturers ask us.</h1><p className="sx-lead">Straight answers, including what Classroom Check can’t do.</p></section>
+    <section className="sx-faq">{QA.map(([q, a]) => <div className="sx-card sx-faq-item" key={q}><h3 className="sx-h3">{q}</h3><p>{a}</p></div>)}</section>
+    <section className="sx-cta"><a className="sx-btn" href="/signup">Request access</a></section>
   </Shell>;
 }
