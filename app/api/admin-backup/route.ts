@@ -20,7 +20,7 @@ export async function GET() {
     ]);
     const exportedAt = new Date().toISOString();
     const body = { format: 'classroom-check-backup', version: 1, exportedAt, exams: ownedExams, attempts: ownedAttempts };
-    return Response.json(body, { headers: { ...privateHeaders, 'Content-Disposition': `attachment; filename="cat-500-level-backup-${exportedAt.slice(0, 10)}.json"` } });
+    return Response.json(body, { headers: { ...privateHeaders, 'Content-Disposition': `attachment; filename="classroom-check-backup-${exportedAt.slice(0, 10)}.json"` } });
   } catch {
     return Response.json({ error: 'Backup could not be created. Please retry.' }, { status: 500, headers: privateHeaders });
   }

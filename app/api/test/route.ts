@@ -1,6 +1,6 @@
 import {isAdmin} from '../../admin-auth';
 import {getDb} from '../../../db';
-import {exams,attempts,roster} from '../../../db/schema';
+import {exams,attempts,roster,accessRequests} from '../../../db/schema';
 import {rosterKey,nameMatches,parseRoster} from '../../roster';
 import {eq,and,isNull,gt,lte,exists,notExists,sql} from 'drizzle-orm';
 import {getAdminUser,getAuthConfig} from '../../auth';
@@ -41,10 +41,20 @@ export async function POST(req:Request){
 try{
  if(req.headers.get('origin') && req.headers.get('origin')!==new URL(req.url).origin)return reply({error:'Invalid origin'},403);
  const b:any=await req.json(); const db=getDb(); const action=b.action==='flag'?'exit':b.action;
- if(['list','create','toggle','results','delete','getroster','setroster','allowrejoin','attemptdetail'].includes(action)){
+ if(action==='requestaccess'){
+ if(typeof b.website==='string'&&b.website)return reply({ok:true});
+ const name=typeof b.name==='string'?b.name.trim():'',inst=typeof b.institution==='string'?b.institution.trim():'',email=typeof b.email==='string'?b.email.trim().toLowerCase():'';
+ if(!name||name.length>100||!inst||inst.length>150||email.length>150||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return reply({error:'Please enter your name, institution and a valid email address.'},400);
+ const total=await db.select({c:sql<number>`count(*)`}).from(accessRequests).get();
+ if(Number(total?.c||0)>=2000)return reply({error:'Requests are temporarily closed. Please try again later.'},429);
+ await db.insert(accessRequests).values({id:crypto.randomUUID(),name,institution:inst,email,created:Date.now()}).onConflictDoNothing();
+ return reply({ok:true});
+ }
+ if(['list','create','toggle','results','delete','getroster','setroster','allowrejoin','attemptdetail','accessrequests'].includes(action)){
  const user=await getAdminUser();if(!user)return reply({error:'Please sign in to manage your tests.'},401);if(!isAdmin(user))return reply({error:'Administrator access only.'},403);
  if(!validMutationOrigin(req,getAuthConfig()))return reply({error:'Invalid origin'},403);
  if(action==='list'){const all=await db.select().from(exams).where(eq(exams.owner,user.userId));const rc=await db.select({exam:roster.exam,n:sql<number>`count(*)`}).from(roster).groupBy(roster.exam);const counts=new Map(rc.map(r=>[r.exam,Number(r.n)]));return reply({exams:all.map(x=>({...x,roster:counts.get(x.id)||0}))})}
+ if(action==='accessrequests')return reply({requests:await db.select().from(accessRequests).orderBy(sql`${accessRequests.created} desc`).limit(500)});
  if(action==='create'){
  if(typeof b.title!=='string'||!b.title.trim()||b.title.length>150||typeof b.course!=='string'||!b.course.trim()||!Number.isInteger(b.minutes)||b.minutes<1||b.minutes>180||!Array.isArray(b.questions)||!b.questions.length||b.questions.length>100) return reply({error:'Enter a title, course, 1–180 minutes and 1–100 questions.'},400);
  const questions=b.questions.map((q:any)=>{if(typeof q.text!=='string'||!q.text.trim()||q.text.length>2000||!Array.isArray(q.options)||q.options.length!==4||q.options.some((o:any)=>typeof o!=='string'||!o.trim()||o.length>500)||!Number.isInteger(q.correct)||q.correct<0||q.correct>3)throw Error('Each question needs four options and a correct answer.');const options=q.options.map((text:string)=>({id:crypto.randomUUID(),text}));return {id:crypto.randomUUID(),text:q.text,options,correct:options[q.correct].id}});

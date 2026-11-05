@@ -1,6 +1,7 @@
 # Publish from your PC without AI
 
-Student page: https://cat-500-level-test.cat500-assessments.workers.dev/
+Website: https://cat-500-level-test.cat500-assessments.workers.dev/
+Student page (share with students): https://cat-500-level-test.cat500-assessments.workers.dev/join
 
 Admin page: https://cat-500-level-test.cat500-assessments.workers.dev/admin
 

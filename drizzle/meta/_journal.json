@@ -15,6 +15,13 @@
       "when": 1793254064109,
       "tag": "0001_needy_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793862966489,
+      "tag": "0002_big_stature",
+      "breakpoints": true
     }
   ]
 }

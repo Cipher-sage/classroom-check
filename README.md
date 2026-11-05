@@ -1,8 +1,9 @@
-# CAT 500 Level Test
+# Classroom Check
 
 A classroom test app you own and can publish from your PC without ChatGPT or Codex.
 
-- Student page: https://cat-500-level-test.cat500-assessments.workers.dev/
+- Website: https://cat-500-level-test.cat500-assessments.workers.dev/
+- Student page (share this with students): https://cat-500-level-test.cat500-assessments.workers.dev/join
 - Private admin page: https://cat-500-level-test.cat500-assessments.workers.dev/admin
 - Private source: https://github.com/Cipher-sage/classroom-check
 - Cloudflare Worker: `cat-500-level-test`; D1 database: `classroom-check`, binding `DB`.

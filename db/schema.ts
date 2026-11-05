@@ -3,3 +3,5 @@ export const exams = sqliteTable('exams', { id:text('id').primaryKey(), owner:te
 export const attempts = sqliteTable('attempts', { id:text('id').primaryKey(), exam:text('exam').notNull(), name:text('name').notNull(), matric:text('matric').notNull(), department:text('department').notNull(), paper:text('paper').notNull(), answers:text('answers').notNull().default('{}'), flags:text('flags').notNull().default('[]'), start:integer('start').notNull(), deadline:integer('deadline').notNull(), submitted:integer('submitted'), score:integer('score'), total:integer('total').notNull() }, t=>[uniqueIndex('one_attempt').on(t.exam,t.matric)]);
 
 export const roster = sqliteTable('roster', { exam:text('exam').notNull(), key:text('key').notNull(), matric:text('matric').notNull(), name:text('name').notNull() }, t=>[primaryKey({columns:[t.exam,t.key]})]);
+
+export const accessRequests = sqliteTable('access_requests', { id:text('id').primaryKey(), name:text('name').notNull(), institution:text('institution').notNull(), email:text('email').notNull(), created:integer('created').notNull() }, t=>[uniqueIndex('access_requests_email').on(t.email)]);
