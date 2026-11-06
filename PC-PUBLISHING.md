@@ -1,9 +1,9 @@
 # Publish from your PC without AI
 
-Website: https://cat-500-level-test.cat500-assessments.workers.dev/
-Student page (share with students): https://cat-500-level-test.cat500-assessments.workers.dev/join
+Website: https://classroom-check.nextkind.workers.dev/
+Student page (share with students): https://classroom-check.nextkind.workers.dev/join
 
-Admin page: https://cat-500-level-test.cat500-assessments.workers.dev/admin
+Admin page: https://classroom-check.nextkind.workers.dev/admin
 
 ## Add questions or run tests
 
@@ -92,7 +92,7 @@ For each update:
 
 1. Edit your files and **save** them.
 2. Commit the changes and **push to `main`**, using the commands above or GitHub Desktop.
-3. Open Cloudflare → **Workers & Pages** → **cat-500-level-test** → **Deployments**. Find your latest commit and click its **Build** link to see progress and logs. **Settings → Builds** holds the connection settings.
+3. Open Cloudflare → **Workers & Pages** → **classroom-check** → **Deployments**. Find your latest commit and click its **Build** link to see progress and logs. **Settings → Builds** holds the connection settings.
 4. Wait until the build and deployment finish successfully. A successful GitHub push alone does not confirm publication. If the build fails, open its log, fix the reported error, then commit and push the fix.
 5. Refresh the student and admin links to check your change.
 

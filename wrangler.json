@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "cat-500-level-test",
+  "name": "classroom-check",
   "main": "worker/index.ts",
   "account_id": "9154d31e936300f3d797744d83cded8b",
   "compatibility_date": "2026-05-15",
@@ -21,7 +21,7 @@
   },
   "vars": {
     "ADMIN_GITHUB_ID": "180553969",
-    "APP_ORIGIN": "https://cat-500-level-test.cat500-assessments.workers.dev",
+    "APP_ORIGIN": "https://classroom-check.nextkind.workers.dev",
     "GITHUB_CLIENT_ID": "Ov23lizXIglxIal2CvRo"
   }
 }

@@ -2,11 +2,11 @@
 
 A classroom test app you own and can publish from your PC without ChatGPT or Codex.
 
-- Website: https://cat-500-level-test.cat500-assessments.workers.dev/
-- Student page (share this with students): https://cat-500-level-test.cat500-assessments.workers.dev/join
-- Private admin page: https://cat-500-level-test.cat500-assessments.workers.dev/admin
+- Website: https://classroom-check.nextkind.workers.dev/
+- Student page (share this with students): https://classroom-check.nextkind.workers.dev/join
+- Private admin page: https://classroom-check.nextkind.workers.dev/admin
 - Private source: https://github.com/Cipher-sage/classroom-check
-- Cloudflare Worker: `cat-500-level-test`; D1 database: `classroom-check`, binding `DB`.
+- Cloudflare Worker: `classroom-check`; D1 database: `classroom-check`, binding `DB`.
 
 **Start with [PC-PUBLISHING.md](PC-PUBLISHING.md).**
 

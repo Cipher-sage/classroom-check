@@ -11,6 +11,6 @@ if errorlevel 1 (
   exit /b 1
 )
 echo.
-echo Published. Refresh https://cat-500-level-test.cat500-assessments.workers.dev
+echo Published. Refresh https://classroom-check.nextkind.workers.dev
 echo Save your source changes to GitHub too; see PC-PUBLISHING.md.
 pause
