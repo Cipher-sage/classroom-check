@@ -1,7 +1,7 @@
 import Shell from '../site/Shell';
 export const metadata = { title: 'Privacy — Classroom Check' };
 export default function Privacy() {
-  return <Shell>
+  return <Shell active="privacy">
     <section className="sx-pagehead">
       <p className="sx-eb">Privacy</p>
       <h1 className="sx-h1">What Classroom Check stores, in plain words.</h1>

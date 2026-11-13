@@ -29,5 +29,5 @@ export default function AdminSession({children,expiresAt}:{children:React.ReactN
    document.removeEventListener('visibilitychange',check);
   };
  },[expiresAt]);
- return <><div className="admin-security"><span>Private administrator session · signs out after 10 minutes of inactivity</span><form ref={signOut} action="/api/auth/logout" method="post" onSubmit={()=>flushSync(()=>setLocked(true))}><button type="submit">Sign out</button></form></div>{locked?<main className="admin-login"><section className="card"><h1 className="smalltitle">Signing out securely…</h1><p>Your dashboard is hidden. If this page does not redirect, use Sign out above.</p></section></main>:children}</>;
+ return <><div className="admin-strip"><div className="admin-strip-in"><span>🔒 Private admin session · signs out after 10 minutes of inactivity</span><form ref={signOut} action="/api/auth/logout" method="post" onSubmit={()=>flushSync(()=>setLocked(true))}><button type="submit">Sign out</button></form></div></div>{locked?<div className="app"><main className="admin-login"><section className="card"><h1>Signing out securely…</h1><p>Your dashboard is hidden. If this page does not redirect, use Sign out above.</p></section></main></div>:children}</>;
 }

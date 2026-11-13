@@ -9,12 +9,13 @@ const QA: [string, string][] = [
   ['Does it work for large classes?', 'It has run a real exam with 101 students at once, and has been load-tested with 102 simulated students.'],
   ['Which question types are supported?', 'Multiple choice, with four options per question, at the moment.'],
   ['Who can see the results and class lists?', 'Only the lecturer who runs the exam. See our privacy page for what we store.'],
+  ['Can students read the questions in larger text?', 'Yes. During the test, the Aa button makes questions and options larger. The app also follows the phone’s light or dark mode.'],
   ['Can students see their answers afterwards?', 'Not yet. A review page that you can release after the exam is planned.'],
 ];
 export default function Faq() {
   return <Shell active="faq">
     <section className="sx-pagehead"><p className="sx-eb">FAQ</p><h1 className="sx-h1">Questions lecturers ask us.</h1><p className="sx-lead">Straight answers, including what Classroom Check can’t do.</p></section>
-    <section className="sx-faq">{QA.map(([q, a]) => <div className="sx-card sx-faq-item" key={q}><h3 className="sx-h3">{q}</h3><p>{a}</p></div>)}</section>
-    <section className="sx-cta"><a className="sx-btn" href="/signup">Request access</a></section>
+    <section className="sx-faq">{QA.map(([q, a], i) => <details key={q} open={i === 0}><summary>{q}</summary><p>{a}</p></details>)}</section>
+    <section className="sx-cta"><h2 className="sx-h2">Still have a question?</h2><p>Tell us about your class and we will get back to you.</p><div className="sx-actions"><a className="sx-btn" href="/signup">Request access</a></div></section>
   </Shell>;
 }
