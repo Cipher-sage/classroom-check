@@ -1,4 +1,4 @@
-/* Public website. Colour tokens come from globals.css (:root), so light/dark mode is shared with the app. */
+/* Public website. Colour tokens come from globals.css (:root). */
 .sx{background:var(--bg);color:var(--ink);font:16px/1.65 var(--font);min-height:100vh}
 .sx *{box-sizing:border-box}
 .sx h1,.sx h2,.sx h3{font-family:var(--font-head);font-weight:700;margin:0;color:var(--ink);letter-spacing:-.025em}

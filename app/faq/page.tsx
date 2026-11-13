@@ -9,7 +9,7 @@ const QA: [string, string][] = [
   ['Does it work for large classes?', 'It has run a real exam with 101 students at once, and has been load-tested with 102 simulated students.'],
   ['Which question types are supported?', 'Multiple choice, with four options per question, at the moment.'],
   ['Who can see the results and class lists?', 'Only the lecturer who runs the exam. See our privacy page for what we store.'],
-  ['Can students read the questions in larger text?', 'Yes. During the test, the Aa button makes questions and options larger. The app also follows the phone’s light or dark mode.'],
+  ['Can students read the questions in larger text?', 'Yes. During the test, the Aa button makes questions and options larger.'],
   ['Can students see their answers afterwards?', 'Not yet. A review page that you can release after the exam is planned.'],
 ];
 export default function Faq() {

@@ -18,20 +18,6 @@
   --mono:ui-monospace,'Cascadia Mono','SF Mono',Menlo,Consolas,monospace;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#0d1412;--surface:#141e1b;--surface-2:#1a2723;--surface-3:#22322d;
-    --ink:#e5eee9;--ink-2:#c8d6cf;--muted:#98aaa1;--faint:#71847b;
-    --line:#24332e;--line-2:#31443d;
-    --brand:#3aa57a;--brand-strong:#57bf93;--brand-ink:#04140d;--brand-soft:#16302a;--brand-text:#72d3a6;
-    --ok:#6fd0a3;--ok-soft:#14302a;--ok-line:#24503f;
-    --warn:#f1c467;--warn-soft:#2b2412;--warn-line:#4b3c18;
-    --danger:#ff8c80;--danger-soft:#331a19;--danger-line:#5b2c29;
-    --info:#8fb4ff;--info-soft:#18233a;
-    --shadow-sm:none;--shadow:0 0 0 1px var(--line);
-    color-scheme:dark;
-  }
-}
 
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
